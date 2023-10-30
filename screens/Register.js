@@ -1,0 +1,184 @@
+import React, { Component } from "react";
+import {
+    View,
+    StyleSheet,
+    SafeAreaView,
+    Platform,
+    StatusBar,
+    Image,
+    TextInput,
+    Alert,
+    TouchableOpacity,
+    Text
+} from "react-native";
+
+import firebase from "firebase";
+import { RFValue } from "react-native-responsive-fontsize";
+import * as Font from "expo-font";
+
+
+const appIcon = require("../assets/logo.png");
+
+export default class RegisterScreen extends Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            first_name: "",
+            last_name: "",
+            email: "",
+            password: "",
+            confirmPassword: "",
+            fontsLoaded: false
+        };
+    }
+    async _loadFontsAsync() {
+        await Font.loadAsync(customFonts);
+        this.setState({ fontsLoaded: true });
+    }
+
+    componentDidMount() {
+        this._loadFontsAsync();
+    }
+
+    registerUser = (email, password, confirmPassword, first_name, last_name) => {
+        if (password == confirmPassword) {
+            firebase
+                .auth()
+                .createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    Alert.alert("Usuário registrado!");
+                    console.log(userCredential.user.uid)
+                    this.props.navigation.replace("Login");
+                    firebase.database().ref("/users/" + userCredential.user.uid)
+                        .set({
+                            email: userCredential.user.email,
+                            first_name: first_name,
+                            last_name: last_name,
+                            current_theme: "dark"
+                        })
+                })
+                .catch(error => {
+                    Alert.alert(error.message);
+                });
+        } else {
+            Alert.alert("As senhas não são iguais!");
+        }
+    };
+
+
+    render() {
+
+        const { email, password, confirmPassword, first_name, last_name } = this.state;
+
+        return (
+            <View style={styles.container}>
+                <SafeAreaView style={styles.droidSafeArea} />
+
+                <Text style={styles.appTitleText}>Registrar</Text>
+
+                <TextInput
+                    style={styles.textinput}
+                    onChangeText={text => this.setState({ first_name: text })}
+                    placeholder={"Nome"}
+                    placeholderTextColor={"black"}
+
+                />
+                <TextInput
+                    style={styles.textinput}
+                    onChangeText={text => this.setState({ last_name: text })}
+                    placeholder={"Sobrenome"}
+                    placeholderTextColor={"black"}
+
+                />
+                <TextInput
+                    style={styles.textinput}
+                    onChangeText={text => this.setState({ email: text })}
+                    placeholder={"Digite o seu e-mail"}
+                    placeholderTextColor={"black"}
+
+                />
+                <TextInput
+                    style={styles.textinput}
+                    onChangeText={text => this.setState({ password: text })}
+                    placeholder={"Digite a senha"}
+                    placeholderTextColor={"black"}
+                    secureTextEntry
+                />
+                <TextInput
+                    style={styles.textinput}
+                    onChangeText={text => this.setState({ confirmPassword: text })}
+                    placeholder={"Confirme a senha"}
+                    placeholderTextColor={"black"}
+                    secureTextEntry
+                />
+                <TouchableOpacity
+                    style={[styles.button, { marginTop: 20 }]}
+                    onPress={() => this.registerUser(email, password, confirmPassword, first_name, last_name)}
+                >
+                    <Text style={styles.buttonText}>Registrar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    onPress={() => this.props.navigation.replace("Login")}
+                >
+                    <Text style={styles.buttonTextNewUser}>Login</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
+
+}
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: "white",
+        alignItems: "center",
+        justifyContent: "center"
+    },
+    droidSafeArea: {
+        marginTop: Platform.OS === "android" ? StatusBar.currentHeight : RFValue(35)
+    },
+    appIcon: {
+        width: RFValue(200),
+        height: RFValue(200),
+        resizeMode: "contain",
+        marginBottom: RFValue(20)
+    },
+    appTitleText: {
+        color: "black",
+        textAlign: "center",
+        fontSize: RFValue(40),
+        marginBottom: RFValue(20)
+    },
+    textinput: {
+        width: RFValue(250),
+        height: RFValue(40),
+        padding: RFValue(10),
+        marginTop: RFValue(10),
+        borderColor: "black",
+        borderWidth: RFValue(4),
+        borderRadius: RFValue(10),
+        fontSize: RFValue(15),
+        color: "black",
+        backgroundColor: "white"
+    },
+    button: {
+        width: RFValue(250),
+        height: RFValue(50),
+        flexDirection: "row",
+        justifyContent: "space-evenly",
+        alignItems: "center",
+        borderRadius: RFValue(30),
+        backgroundColor: "black",
+        marginBottom: RFValue(20)
+    },
+    buttonText: {
+        fontSize: RFValue(24),
+        color: "white"
+    },
+    buttonTextNewUser: {
+        fontSize: RFValue(12),
+        color: "black",
+        textDecorationLine: 'underline'
+    }
+});
